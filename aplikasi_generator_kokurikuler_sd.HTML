@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Generator Perencanaan Kokurikuler SD</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #e0f7fa; margin: 0; padding: 20px;}
+    h1 {text-align: center; color: #00796b; margin-bottom: 20px;}
+    .container {max-width: 900px; margin: auto; background: #ffffff; padding: 20px 25px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);}
+    label {font-weight: bold; display: block; margin-top: 15px; color: #004d40;}
+    input, select, textarea {width: 100%; padding: 8px; margin-top: 5px; border-radius: 6px; border: 1px solid #b2dfdb; font-size: 14px;}
+    textarea {min-height: 80px;}
+    button {margin-top: 20px; padding: 10px 18px; font-size: 14px; cursor: pointer; border: none; border-radius: 8px; background: #00796b; color: #fff; transition: 0.3s;}
+    button:hover {background: #004d40;}
+    #download-btn {background:#004d40; margin-left: 10px;}
+    #download-btn:hover {background:#00796b;}
+    .hasil {background: #f1f8e9; padding: 15px; border-radius: 12px; margin-top: 20px; border: 1px solid #c5e1a5; font-size: 14px; line-height: 1.5;}
+    table {border-collapse: collapse; width: 100%; margin-top: 15px; border-radius: 8px; overflow: hidden; font-size: 13px;}
+    th, td {border: 1px solid #004d40; padding: 8px; text-align: left;}
+    th {background: #a5d6a7; color: #004d40;}
+    tr:nth-child(even) {background: #e8f5e9;}
+    #dimensi-group {display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top:10px;}
+    .dimensi-btn {padding: 8px; border: 1px solid #b2dfdb; border-radius: 8px; background: #e0f2f1; text-align: center; cursor: pointer; transition: 0.3s; user-select: none; font-size:14px;}
+    .dimensi-btn.selected {background: #00796b; color: #fff; border-color: #004d40;}
+  </style>
+</head>
+<body>
+
+<h1>Generator Perencanaan Kokurikuler SD</h1>
+
+<div class="container">
+
+  <label>Nama Sekolah</label>
+  <input id="sekolah" placeholder="Masukkan nama sekolah">
+
+  <label>Kelas</label>
+  <input id="kelas" placeholder="Masukkan kelas">
+
+  <label>Tema</label>
+  <input id="tema" placeholder="Masukkan tema kegiatan">
+
+  <label>Alokasi Waktu</label>
+  <input id="waktu" placeholder="Contoh: 48 JP">
+
+  <label>Lokasi Kegiatan</label>
+  <input id="lokasi" placeholder="Masukkan lokasi kegiatan">
+
+  <label>Dimensi (klik untuk memilih, bisa pilih lebih dari satu)</label>
+  <div id="dimensi-group">
+    <div class="dimensi-btn" data-value="Keimanan & Ketakwaan">Keimanan & Ketakwaan</div>
+    <div class="dimensi-btn" data-value="Kewargaan">Kewargaan</div>
+    <div class="dimensi-btn" data-value="Penalaran Kritis">Penalaran Kritis</div>
+    <div class="dimensi-btn" data-value="Kreativitas">Kreativitas</div>
+    <div class="dimensi-btn" data-value="Kolaborasi">Kolaborasi</div>
+    <div class="dimensi-btn" data-value="Kemandirian">Kemandirian</div>
+    <div class="dimensi-btn" data-value="Kesehatan">Kesehatan</div>
+    <div class="dimensi-btn" data-value="Komunikasi">Komunikasi</div>
+  </div>
+
+  <button id="generate-btn">Generate Otomatis</button>
+  <button id="download-btn">Download PDF</button>
+
+  <div id="output" class="hasil"></div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const kontenDimensi = {
+  'Keimanan & Ketakwaan': {tujuan:'Memahami dan mengamalkan ajaran agama serta menjaga hubungan dengan Tuhan dan sesama.', pedagogis:'Ceramah singkat, diskusi kelompok, doa bersama.', lingkungan:'Lingkungan kelas yang mendukung kegiatan keagamaan dan refleksi diri.', kemitraan:'Guru agama, orang tua, tokoh agama lokal.', kegiatan:'Membuat jurnal kegiatan ibadah, diskusi nilai-nilai agama.'},
+  'Kewargaan': {tujuan:'Menumbuhkan rasa bangga terhadap identitas bangsa dan menghargai keberagaman.', pedagogis:'Simulasi, permainan kelompok, diskusi nilai kebangsaan.', lingkungan:'Lingkungan sekolah yang inklusif dan menghargai perbedaan.', kemitraan:'Guru, orang tua, komunitas lokal.', kegiatan:'Proyek kebersihan kelas, perayaan budaya lokal.'},
+  'Penalaran Kritis': {tujuan:'Mengembangkan kemampuan berpikir logis, analitis, dan memecahkan masalah.', pedagogis:'Eksperimen, studi kasus, permainan logika.', lingkungan:'Lingkungan yang mendorong eksplorasi dan bertanya.', kemitraan:'Guru, pustakawan, praktisi pendidikan.', kegiatan:'Menyelesaikan teka-teki, membuat laporan observasi.'},
+  'Kreativitas': {tujuan:'Mendorong siswa menghasilkan ide inovatif dan solusi kreatif.', pedagogis:'Brainstorming, proyek seni, eksperimen kreatif.', lingkungan:'Ruang kelas yang mendukung kebebasan berekspresi.', kemitraan:'Guru seni, komunitas kreatif lokal.', kegiatan:'Membuat karya seni, eksperimen ide baru.'},
+  'Kolaborasi': {tujuan:'Mengajarkan siswa bekerja sama dan berbagi tanggung jawab.', pedagogis:'Proyek kelompok, diskusi kolaboratif.', lingkungan:'Lingkungan yang mendukung kerjasama dan komunikasi.', kemitraan:'Guru, siswa lain, organisasi lokal.', kegiatan:'Proyek kelompok, permainan tim.'},
+  'Kemandirian': {tujuan:'Melatih tanggung jawab dan inisiatif siswa dalam kegiatan sehari-hari.', pedagogis:'Tugas mandiri, refleksi pribadi.', lingkungan:'Lingkungan yang memberi kesempatan berinisiatif.', kemitraan:'Guru, orang tua.', kegiatan:'Menyusun jadwal harian, pengelolaan proyek pribadi.'},
+  'Kesehatan': {tujuan:'Memahami pentingnya pola hidup bersih dan sehat.', pedagogis:'Praktik kebiasaan sehat, observasi lapangan.', lingkungan:'Lingkungan sekolah bersih dan aman.', kemitraan:'Guru PJOK, orang tua, puskesmas.', kegiatan:'Senam, membuat jurnal kesehatan, kegiatan olahraga.'},
+  'Komunikasi': {tujuan:'Mengembangkan kemampuan menyimak, berbicara, membaca, dan menulis dengan baik.', pedagogis:'Diskusi, debat, presentasi.', lingkungan:'Lingkungan yang mendukung ekspresi dan komunikasi.', kemitraan:'Guru bahasa, teman sebaya, orang tua.', kegiatan:'Membuat presentasi, bercerita, menulis laporan.'}
+};
+
+document.querySelectorAll('.dimensi-btn').forEach(btn => {
+  btn.addEventListener('click', () => { btn.classList.toggle('selected'); });
+});
+
+function generate(){
+  const sekolah = document.getElementById('sekolah').value;
+  const kelas = document.getElementById('kelas').value;
+  const tema = document.getElementById('tema').value;
+  const waktu = document.getElementById('waktu').value;
+  const lokasi = document.getElementById('lokasi').value;
+  const dimensi = [...document.querySelectorAll('.dimensi-btn.selected')].map(btn=>btn.dataset.value);
+  if(dimensi.length===0){alert('Pilih minimal satu dimensi!');return;}
+
+  let tujuan='', pedagogis='', lingkungan='', kemitraan='', kegiatan='';
+  dimensi.forEach(d=>{
+    tujuan+=`- ${kontenDimensi[d].tujuan}\n`;
+    pedagogis+=`- ${kontenDimensi[d].pedagogis}\n`;
+    lingkungan+=`- ${kontenDimensi[d].lingkungan}\n`;
+    kemitraan+=`- ${kontenDimensi[d].kemitraan}\n`;
+    kegiatan+=`- ${kontenDimensi[d].kegiatan}\n`;
+  });
+
+  let rubrikRows = dimensi.map(d=>`
+    <tr>
+      <td>${d}</td>
+      <td>Perilaku sesuai dimensi ${d}</td>
+      <td>Menunjukkan konsistensi sangat baik dalam semua kegiatan</td>
+      <td>Menunjukkan konsistensi baik dalam sebagian besar kegiatan</td>
+      <td>Menunjukkan konsistensi pada beberapa kegiatan</td>
+      <td>Belum menunjukkan perilaku sesuai secara konsisten</td>
+    </tr>`).join('');
+
+  const htmlContent = `
+<h2 style="color:#00796b; margin-bottom:10px">PERENCANAAN KOKURIKULER</h2>
+<p><strong>Nama Sekolah:</strong> ${sekolah}<br>
+<strong>Kelas:</strong> ${kelas}<br>
+<strong>Tema:</strong> ${tema}<br>
+<strong>Alokasi Waktu:</strong> ${waktu}<br>
+<strong>Lokasi:</strong> ${lokasi}</p>
+<p><strong>Dimensi:</strong> ${dimensi.join(', ')}</p>
+<h3>B. Tujuan Pembelajaran</h3>
+<p>${tujuan.replace(/\n/g,'<br>')}</p>
+<h3>C. Praktik Pedagogis</h3>
+<p>${pedagogis.replace(/\n/g,'<br>')}</p>
+<h3>D. Lingkungan Pembelajaran</h3>
+<p>${lingkungan.replace(/\n/g,'<br>')}</p>
+<h3>E. Kemitraan Pembelajaran</h3>
+<p>${kemitraan.replace(/\n/g,'<br>')}</p>
+<h3>F. Kegiatan</h3>
+<p>${kegiatan.replace(/\n/g,'<br>')}</p>
+<h3>G. Asesmen</h3>
+<p>Formatif: Teknik observasi dengan instrumen catatan anekdotal</p>
+<h3>SUMATIF: Penilaian Kinerja dengan Rubrik</h3>
+<table>${rubrikRows}</table>`;
+
+  document.getElementById('output').innerHTML = htmlContent;
+}
+
+document.getElementById('generate-btn').addEventListener('click',generate);
+
+// PDF Download
+const { jsPDF } = window.jspdf;
+document.getElementById('download-btn').addEventListener('click', ()=>{
+  const doc = new jsPDF();
+  const content = document.getElementById('output').innerHTML;
+  doc.html(content, {
+    callback: function(doc) { doc.save('Perencanaan_Kokurikuler.pdf'); },
+    x: 10, y: 10,
+    width: 190
+  });
+});
+</script>
+
+</body>
+</html>
