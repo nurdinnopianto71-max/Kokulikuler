@@ -24,6 +24,8 @@
     .dimensi-btn {padding: 8px; border: 1px solid #b2dfdb; border-radius: 8px; background: #e0f2f1; text-align: center; cursor: pointer; transition: 0.3s; user-select: none; font-size:14px;}
     .dimensi-btn.selected {background: #00796b; color: #fff; border-color: #004d40;}
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -32,19 +34,19 @@
 <div class="container">
 
   <label>Nama Sekolah</label>
-  <input id="sekolah" placeholder="Masukkan nama sekolah">
+  <input id="sekolah" value="SD Cerdas Berkarakter">
 
   <label>Kelas</label>
-  <input id="kelas" placeholder="Masukkan kelas">
+  <input id="kelas" value="II">
 
   <label>Tema</label>
-  <input id="tema" placeholder="Masukkan tema kegiatan">
+  <input id="tema" value="Hidup Sehat">
 
   <label>Alokasi Waktu</label>
-  <input id="waktu" placeholder="Contoh: 48 JP">
+  <input id="waktu" value="48 JP">
 
   <label>Lokasi Kegiatan</label>
-  <input id="lokasi" placeholder="Masukkan lokasi kegiatan">
+  <input id="lokasi" value="di lingkungan satuan pendidikan dan sekitar">
 
   <label>Dimensi (klik untuk memilih, bisa pilih lebih dari satu)</label>
   <div id="dimensi-group">
@@ -65,7 +67,6 @@
 
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const kontenDimensi = {
   'Keimanan & Ketakwaan': {tujuan:'Memahami dan mengamalkan ajaran agama serta menjaga hubungan dengan Tuhan dan sesama.', pedagogis:'Ceramah singkat, diskusi kelompok, doa bersama.', lingkungan:'Lingkungan kelas yang mendukung kegiatan keagamaan dan refleksi diri.', kemitraan:'Guru agama, orang tua, tokoh agama lokal.', kegiatan:'Membuat jurnal kegiatan ibadah, diskusi nilai-nilai agama.'},
@@ -79,9 +80,10 @@ const kontenDimensi = {
 };
 
 document.querySelectorAll('.dimensi-btn').forEach(btn => {
-  btn.addEventListener('click', () => { btn.classList.toggle('selected'); });
+  btn.addEventListener('click', () => { btn.classList.toggle('selected'); generate(); });
 });
 
+// Fungsi generate
 function generate(){
   const sekolah = document.getElementById('sekolah').value;
   const kelas = document.getElementById('kelas').value;
@@ -89,7 +91,8 @@ function generate(){
   const waktu = document.getElementById('waktu').value;
   const lokasi = document.getElementById('lokasi').value;
   const dimensi = [...document.querySelectorAll('.dimensi-btn.selected')].map(btn=>btn.dataset.value);
-  if(dimensi.length===0){alert('Pilih minimal satu dimensi!');return;}
+
+  if(dimensi.length===0){alert('Pilih minimal satu dimensi!'); return;}
 
   let tujuan='', pedagogis='', lingkungan='', kemitraan='', kegiatan='';
   dimensi.forEach(d=>{
@@ -136,18 +139,26 @@ function generate(){
   document.getElementById('output').innerHTML = htmlContent;
 }
 
-document.getElementById('generate-btn').addEventListener('click',generate);
-
-// PDF Download
-const { jsPDF } = window.jspdf;
-document.getElementById('download-btn').addEventListener('click', ()=>{
-  const doc = new jsPDF();
-  const content = document.getElementById('output').innerHTML;
-  doc.html(content, {
-    callback: function(doc) { doc.save('Perencanaan_Kokurikuler.pdf'); },
-    x: 10, y: 10,
-    width: 190
+// Pilih default saat load
+window.onload = () => {
+  document.querySelectorAll('.dimensi-btn').forEach(btn=>{
+    if(btn.dataset.value==='Kesehatan') btn.classList.add('selected');
   });
+  generate();
+}
+
+// Download PDF
+document.getElementById('download-btn').addEventListener('click', async ()=> {
+  const element = document.getElementById('output');
+  const opt = {margin:10, filename:'Perencanaan_Kokurikuler.pdf', image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'p'}};
+  if(typeof html2pdf === 'undefined'){
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    script.onload = ()=> html2pdf().set(opt).from(element).save();
+    document.body.appendChild(script);
+  } else {
+    html2pdf().set(opt).from(element).save();
+  }
 });
 </script>
 
